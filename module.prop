@@ -1,6 +1,6 @@
 id=coloros_autobypass
 name=ColorOS Auto Bypass Charging
-version=v0.3.1-experimental
-versionCode=4
+version=v0.3.2-experimental
+versionCode=5
 author=littlemagehero
 description=Automatically turns on bypass charging on ColorOS when the charger is plugged in and battery is above 20%.

@@ -3,6 +3,18 @@
 Versions follow `0.x.y` while the module is experimental.
 Format based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.2] - 2026-10-18 (experimental)
+
+### Changed
+- Action button now acts on the charging state:
+  - Charging and bypass on: shows the status only, changes nothing.
+  - Charging and bypass off (for example switched off by ColorOS at your limit): turns bypass on and reports the result.
+  - Not charging: reports "discharging" and changes nothing.
+- Action button shows the three current samples and their average again. They are taken after the bypass check, so they reflect the state after any change.
+
+### Notes
+- The check only runs when you press Action. There is no background check, so the service script adds no overhead.
+
 ## [0.3.1] - 2026-10-18 (experimental)
 
 ### Changed
