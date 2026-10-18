@@ -10,11 +10,15 @@ Experimental KernelSU / Magisk module that turns on bypass charging on ColorOS a
 - ColorOS turns bypass off again by itself on unplug or when it reaches your charge limit.
 
 ## Action button
-Shows charger, level, temperature, voltage, battery current, the real bypass state and your charge limit.
+Shows charger, level, temperature, voltage, average battery current, the real bypass state and your charge limit.
 
 ## Requirements
 - ColorOS with the `bypass_charge_state` system setting (the Quick Settings tile is only a fallback)
 - KernelSU or Magisk
+
+## Tested on
+- Device: OnePlus Ace 6T
+- ColorOS 16/17
 
 ## Notes
 - Check that the key exists on your device: `settings get system bypass_charge_state` should print 0 or 1.

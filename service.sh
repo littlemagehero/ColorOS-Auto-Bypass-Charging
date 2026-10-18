@@ -25,16 +25,15 @@ fire() {
   i=0
   while [ "$i" -lt 3 ]; do
     st=$(settings get system bypass_charge_state 2>/dev/null)
-    case "$st" in
-      1) return ;;
-      0) dumpsys battery 2>/dev/null | grep -qE "$PLUGGED" || return
-         settings put system bypass_charge_state 1 2>/dev/null
-         sleep 2
-         [ "$(settings get system bypass_charge_state 2>/dev/null)" = "1" ] && return ;;
-      *) cmd statusbar click-tile "$TILE" >/dev/null 2>&1   # key missing: tile only
-         return ;;
-    esac
-    cmd statusbar click-tile "$TILE" >/dev/null 2>&1         # key did not stick
+    [ "$st" = "1" ] && return
+    dumpsys battery 2>/dev/null | grep -qE "$PLUGGED" || return
+    if [ "$st" = "0" ]; then
+      settings put system bypass_charge_state 1 2>/dev/null
+      sleep 2
+      [ "$(settings get system bypass_charge_state 2>/dev/null)" = "1" ] && return
+    fi
+    cmd statusbar click-tile "$TILE" >/dev/null 2>&1
+    [ "$st" = "0" ] || return   # key missing: single tile click, no retries
     sleep 3
     i=$((i + 1))
   done

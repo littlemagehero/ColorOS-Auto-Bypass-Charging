@@ -3,6 +3,21 @@
 Versions follow `0.x.y` while the module is experimental.
 Format based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.1] - 2026-10-18 (experimental)
+
+### Changed
+- Action button no longer estimates the bypass state from battery current. It reads `bypass_charge_state` only, and reports "unknown" if the key is missing.
+- Action button shows one averaged current reading instead of three samples plus an average, and no longer prints the tile check (the module description already shows the method in use).
+- Action button now detects docks, matching the service script.
+- Simplified the retry logic in `service.sh`: one tile-click path instead of two, same behaviour.
+
+### Documentation
+- README now lists the tested device: OnePlus Ace 6T, ColorOS 16/17.
+
+### Known issues
+- The fallback tile name may change with ColorOS updates.
+- Only tested on the OnePlus Ace 6T (ColorOS 16/17).
+
 ## [0.3.0] - 2026-10-18 (experimental)
 
 ### Changed
