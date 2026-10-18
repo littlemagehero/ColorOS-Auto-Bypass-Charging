@@ -1,0 +1,26 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check version matches tag
+        run: grep -q "^version=${GITHUB_REF_NAME}" module.prop
+      - name: Build zip and notes
+        run: |
+          V="${GITHUB_REF_NAME#v}"
+          zip -r "$RUNNER_TEMP/ColorOS_Auto_Bypass_Charging_${GITHUB_REF_NAME}.zip" . -x ".git/*" ".github/*"
+          awk -v v="$V" '/^## \[/{p = index($0,"["v"]")>0; next} p' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PRE=""
+          case "$GITHUB_REF_NAME" in v0.*) PRE="--prerelease";; esac
+          gh release create "$GITHUB_REF_NAME" "$RUNNER_TEMP/ColorOS_Auto_Bypass_Charging_${GITHUB_REF_NAME}.zip" \
+            --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md" $PRE
