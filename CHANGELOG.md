@@ -3,6 +3,19 @@
 Versions follow `0.x.y` while the module is experimental.
 Format based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.0] - 2026-10-18 (experimental)
+
+### Changed
+- Turns bypass on by writing `settings put system bypass_charge_state 1` directly, instead of clicking the Quick Settings tile. The tile no longer needs to stay in the panel.
+- The tile click is now only a fallback: used if the key does not stick after the write, or if the key does not exist on the device (single click, no retries).
+- Retries reduced to 3 attempts.
+- The module description now shows the method in use (`settings key`, `tile fallback` or `not found`) instead of the tile check.
+
+### Notes
+- The key is only written while a charger is connected and the battery is above 20%.
+- It is not written if the key is missing, to avoid creating unknown settings.
+- Confirmed on the author's device that writing the key flips the Bypass charging toggle. Current drop while charging should be verified with the Action button.
+
 ## [0.2.0] - 2026-10-18 (experimental)
 
 ### Added

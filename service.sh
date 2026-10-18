@@ -7,25 +7,34 @@ PLUGGED="(AC|USB|Wireless|Dock) powered: true"
 until [ "$(getprop sys.boot_completed)" = "1" ]; do sleep 3; done
 sleep 20
 
-if dumpsys package com.oplus.battery 2>/dev/null | grep -q "BypassChargeTile"; then
-  TS="found ✅"
+st=$(settings get system bypass_charge_state 2>/dev/null)
+if [ "$st" = "0" ] || [ "$st" = "1" ]; then
+  M="settings key ✅"
+elif dumpsys package com.oplus.battery 2>/dev/null | grep -q "BypassChargeTile"; then
+  M="tile fallback ✅"
 else
-  TS="not found ⚠️"
+  M="not found ⚠️"
 fi
-sed -i "s#^description=.*#description=status: active ✅ | tile: $TS#" "$MODDIR/module.prop"
+sed -i "s#^description=.*#description=status: active ✅ | method: $M#" "$MODDIR/module.prop"
 
-# Turn bypass on: skip if already on, retry while ColorOS is not ready
+# Turn bypass on: write the settings key; fall back to the tile if it does not stick
 fire() {
   sleep "$1"
   read -r lvl < "$CAP"
   [ "${lvl:-0}" -gt 20 ] || return
   i=0
-  while [ "$i" -lt 5 ]; do
+  while [ "$i" -lt 3 ]; do
     st=$(settings get system bypass_charge_state 2>/dev/null)
-    [ "$st" = "1" ] && return
-    dumpsys battery 2>/dev/null | grep -qE "$PLUGGED" || return
-    cmd statusbar click-tile "$TILE" >/dev/null 2>&1
-    [ "$st" = "0" ] || return   # state unreadable: single click only
+    case "$st" in
+      1) return ;;
+      0) dumpsys battery 2>/dev/null | grep -qE "$PLUGGED" || return
+         settings put system bypass_charge_state 1 2>/dev/null
+         sleep 2
+         [ "$(settings get system bypass_charge_state 2>/dev/null)" = "1" ] && return ;;
+      *) cmd statusbar click-tile "$TILE" >/dev/null 2>&1   # key missing: tile only
+         return ;;
+    esac
+    cmd statusbar click-tile "$TILE" >/dev/null 2>&1         # key did not stick
     sleep 3
     i=$((i + 1))
   done

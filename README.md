@@ -4,21 +4,21 @@ Experimental KernelSU / Magisk module that turns on bypass charging on ColorOS a
 
 ## How it works
 - Listens for Android's `battery_status` events (no polling, no logs).
-- On plug-in with battery above 20%, checks `settings get system bypass_charge_state`. If bypass is already on it does nothing; otherwise it runs
+- On plug-in with battery above 20%, reads `settings get system bypass_charge_state`. If bypass is already on it does nothing; if it is 0 it writes 1.
+- If the write does not stick, or the key does not exist, it falls back to clicking the bypass tile:
   `cmd statusbar click-tile com.oplus.battery/com.oplus.powermanager.fuelgaue.bypasscharge.BypassChargeTile`
-- It retries a few times if ColorOS is not ready yet.
 - ColorOS turns bypass off again by itself on unplug or when it reaches your charge limit.
 
 ## Action button
 Shows charger, level, temperature, voltage, battery current, the real bypass state and your charge limit.
 
 ## Requirements
-- ColorOS with a bypass charging quick-settings tile (kept in the Quick Settings panel)
+- ColorOS with the `bypass_charge_state` system setting (the Quick Settings tile is only a fallback)
 - KernelSU or Magisk
 
 ## Notes
-- The tile name may differ or change between ColorOS versions. Test it first:
-  `su -c 'cmd statusbar click-tile <component>'`
+- Check that the key exists on your device: `settings get system bypass_charge_state` should print 0 or 1.
+- The fallback tile name may differ between ColorOS versions.
 - Experimental: use at your own risk.
 
 See [CHANGELOG.md](CHANGELOG.md) for version history.
