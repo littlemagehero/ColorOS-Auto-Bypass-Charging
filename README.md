@@ -16,6 +16,9 @@ Experimental KernelSU / Magisk module that turns on bypass charging on ColorOS a
 
 It only runs when you press Action, so there is no background overhead.
 
+## Hot install
+Installing or updating the module does not need a reboot: the installer stops the old service, starts the new one and refreshes the Action script. The module manager may still show a reboot prompt, which you can ignore. Removing the module still needs a reboot.
+
 ## Requirements
 - ColorOS with the `bypass_charge_state` system setting (the Quick Settings tile is only a fallback)
 - KernelSU or Magisk

@@ -5,7 +5,7 @@ CAP=/sys/class/power_supply/battery/capacity
 PLUGGED="(AC|USB|Wireless|Dock) powered: true"
 
 until [ "$(getprop sys.boot_completed)" = "1" ]; do sleep 3; done
-sleep 20
+[ "$1" = "now" ] || sleep 20   # "now" = hot install, skip the boot wait
 
 st=$(settings get system bypass_charge_state 2>/dev/null)
 if [ "$st" = "0" ] || [ "$st" = "1" ]; then
@@ -15,7 +15,9 @@ elif dumpsys package com.oplus.battery 2>/dev/null | grep -q "BypassChargeTile";
 else
   M="not found ⚠️"
 fi
-sed -i "s#^description=.*#description=status: active ✅ | method: $M#" "$MODDIR/module.prop"
+for f in "$MODDIR/module.prop" /data/adb/modules/coloros_autobypass/module.prop; do
+  sed -i "s#^description=.*#description=status: active ✅ | method: $M#" "$f" 2>/dev/null
+done
 
 # Turn bypass on: write the settings key; fall back to the tile if it does not stick
 fire() {

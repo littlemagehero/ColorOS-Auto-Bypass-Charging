@@ -3,6 +3,16 @@
 Versions follow `0.x.y` while the module is experimental.
 Format based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.3.3] - 2026-10-18 (experimental)
+
+### Added
+- Hot install: installing or updating the module no longer needs a reboot. A new `customize.sh` stops the running copy, starts the new `service.sh` right away and refreshes the live `service.sh` and `action.sh`, so the Action button uses the new version immediately.
+- `service.sh now` skips the 20-second boot wait when started from the installer.
+
+### Notes
+- The module manager may still show a "reboot" prompt. It can be ignored; rebooting is still fine.
+- Removing the module still needs a reboot to stop the running service.
+
 ## [0.3.2] - 2026-10-18 (experimental)
 
 ### Changed
