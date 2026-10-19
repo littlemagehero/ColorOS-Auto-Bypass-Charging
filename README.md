@@ -2,9 +2,12 @@
 
 Experimental KernelSU / Magisk module that turns on bypass charging on ColorOS automatically when you plug in a charger.
 
+This module is created because ColorOS only supports auto bypass charging when playing games.
+
 ## How it works
+- Only reacts to wired chargers, because ColorOS bypass needs one.
 - Listens for Android's `battery_status` events (no polling, no logs).
-- On plug-in with battery above 20%, reads `settings get system bypass_charge_state`. If bypass is already on it does nothing; if it is 0 it writes 1.
+- On plug-in, reads `settings get system bypass_charge_state`. If bypass is already on it does nothing; if it is 0 it writes 1.
 - If the write does not stick, or the key does not exist, it falls back to clicking the bypass tile:
   `cmd statusbar click-tile com.oplus.battery/com.oplus.powermanager.fuelgaue.bypasscharge.BypassChargeTile`
 - ColorOS turns bypass off again by itself on unplug or when it reaches your charge limit.
@@ -16,11 +19,16 @@ Experimental KernelSU / Magisk module that turns on bypass charging on ColorOS a
 
 It only runs when you press Action, so there is no background overhead.
 
-## Hot install
-Installing or updating the module does not need a reboot: the installer stops the old service, starts the new one and refreshes the Action script. The module manager may still show a reboot prompt, which you can ignore. Removing the module still needs a reboot.
+## Optional: set the threshold
+ColorOS lets you pick the bypass threshold in Settings. To have the module apply it instead, create `/data/adb/coloros_autobypass.conf` containing:
+```
+THRESHOLD=80
+```
+Use 20, 40, 60 or 80. The value is applied each time you plug in. Without the file, the module never touches your threshold. The file is kept when you update the module; delete it by hand if you remove the module.
 
 ## Requirements
 - ColorOS with the `bypass_charge_state` system setting (the Quick Settings tile is only a fallback)
+- A wired charger
 - KernelSU or Magisk
 
 ## Tested on

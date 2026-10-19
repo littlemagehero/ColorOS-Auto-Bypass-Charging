@@ -1,8 +1,8 @@
 #!/system/bin/sh
-MODDIR=${0%/*}
+PROP=/data/adb/modules/coloros_autobypass/module.prop
+CONF=/data/adb/coloros_autobypass.conf
 TILE="com.oplus.battery/com.oplus.powermanager.fuelgaue.bypasscharge.BypassChargeTile"
-CAP=/sys/class/power_supply/battery/capacity
-PLUGGED="(AC|USB|Wireless|Dock) powered: true"
+PLUGGED="(AC|USB) powered: true"   # wired only: ColorOS bypass needs a wired charger
 
 until [ "$(getprop sys.boot_completed)" = "1" ]; do sleep 3; done
 [ "$1" = "now" ] || sleep 20   # "now" = hot install, skip the boot wait
@@ -15,15 +15,20 @@ elif dumpsys package com.oplus.battery 2>/dev/null | grep -q "BypassChargeTile";
 else
   M="not found ⚠️"
 fi
-for f in "$MODDIR/module.prop" /data/adb/modules/coloros_autobypass/module.prop; do
-  sed -i "s#^description=.*#description=status: active ✅ | method: $M#" "$f" 2>/dev/null
-done
+sed -i "s#^description=.*#description=status: active ✅ | method: $M#" "$PROP" 2>/dev/null
+
+# Optional: apply THRESHOLD=20|40|60|80 from the config file, if it exists
+set_threshold() {
+  t=$(sed -n 's/^THRESHOLD=\([0-9]*\).*/\1/p' "$CONF" 2>/dev/null | head -n 1)
+  case "$t" in 20|40|60|80) ;; *) return ;; esac
+  [ "$(settings get system bypass_charge_value 2>/dev/null)" = "$t" ] ||
+    settings put system bypass_charge_value "$t" 2>/dev/null
+}
 
 # Turn bypass on: write the settings key; fall back to the tile if it does not stick
 fire() {
   sleep "$1"
-  read -r lvl < "$CAP"
-  [ "${lvl:-0}" -gt 20 ] || return
+  set_threshold
   i=0
   while [ "$i" -lt 3 ]; do
     st=$(settings get system bypass_charge_state 2>/dev/null)

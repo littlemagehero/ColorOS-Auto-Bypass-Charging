@@ -1,15 +1,15 @@
 #!/system/bin/sh
 BAT=/sys/class/power_supply/battery
-rd() { [ -r "$BAT/$1" ] && cat "$BAT/$1" 2>/dev/null; }
+rd() { cat "$BAT/$1" 2>/dev/null; }
 toma() { v=${1#-}; v=${v:-0}; [ "$v" -gt 20000 ] 2>/dev/null && v=$((v / 1000)); echo "$v"; }
 
-PWR=$(dumpsys battery 2>/dev/null | grep -E "(AC|USB|Wireless|Dock) powered: true" | sed 's/ powered: true//; s/^ *//' | tr '\n' ' ')
+PWR=$(dumpsys battery 2>/dev/null | grep -E "(AC|USB) powered: true" | sed 's/ powered: true//; s/^ *//' | tr '\n' ' ')
 echo "Battery : $(rd capacity)%"
 
 # Not charging: nothing to do
 if [ -z "$PWR" ]; then
-  echo "Charger : not plugged in"
-  echo "Status  : discharging"
+  echo "Charger : no wired charger"
+  echo "Status  : $(rd status)"
   exit 0
 fi
 

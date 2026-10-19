@@ -1,91 +1,30 @@
 # Changelog
 
-Versions follow `0.x.y` while the module is experimental.
-Format based on [Keep a Changelog](https://keepachangelog.com/).
+## [0.3.4] - 2026-10-18
+- README explains why the module exists. Simpler changelog.
+- Small code cleanup.
+- The module manager can check GitHub for updates (stable releases only).
+- Bypass now turns on at any battery level.
+- Only reacts to wired chargers.
+- Optional config file to set the threshold.
 
-## [0.3.3] - 2026-10-18 (experimental)
+## [0.3.3] - 2026-10-18
+- Update the module without rebooting.
 
-### Added
-- Hot install: installing or updating the module no longer needs a reboot. A new `customize.sh` stops the running copy, starts the new `service.sh` right away and refreshes the live `service.sh` and `action.sh`, so the Action button uses the new version immediately.
-- `service.sh now` skips the 20-second boot wait when started from the installer.
+## [0.3.2] - 2026-10-18
+- Action button: turns bypass on if it is off while charging, and says "discharging" when unplugged.
+- Action button shows three current readings again.
 
-### Notes
-- The module manager may still show a "reboot" prompt. It can be ignored; rebooting is still fine.
-- Removing the module still needs a reboot to stop the running service.
+## [0.3.1] - 2026-10-18
+- Action button shows the real bypass state.
+- Code cleanup.
 
-## [0.3.2] - 2026-10-18 (experimental)
+## [0.3.0] - 2026-10-18
+- Turns bypass on directly instead of clicking the tile (the tile is now a fallback).
 
-### Changed
-- Action button now acts on the charging state:
-  - Charging and bypass on: shows the status only, changes nothing.
-  - Charging and bypass off (for example switched off by ColorOS at your limit): turns bypass on and reports the result.
-  - Not charging: reports "discharging" and changes nothing.
-- Action button shows the three current samples and their average again. They are taken after the bypass check, so they reflect the state after any change.
+## [0.2.0] - 2026-10-18
+- Works after a reboot while charging, and retries if ColorOS is not ready yet.
+- No longer switches bypass off by clicking twice.
 
-### Notes
-- The check only runs when you press Action. There is no background check, so the service script adds no overhead.
-
-## [0.3.1] - 2026-10-18 (experimental)
-
-### Changed
-- Action button no longer estimates the bypass state from battery current. It reads `bypass_charge_state` only, and reports "unknown" if the key is missing.
-- Action button shows one averaged current reading instead of three samples plus an average, and no longer prints the tile check (the module description already shows the method in use).
-- Action button now detects docks, matching the service script.
-- Simplified the retry logic in `service.sh`: one tile-click path instead of two, same behaviour.
-
-### Documentation
-- README now lists the tested device: OnePlus Ace 6T, ColorOS 16/17.
-
-### Known issues
-- The fallback tile name may change with ColorOS updates.
-- Only tested on the OnePlus Ace 6T (ColorOS 16/17).
-
-## [0.3.0] - 2026-10-18 (experimental)
-
-### Changed
-- Turns bypass on by writing `settings put system bypass_charge_state 1` directly, instead of clicking the Quick Settings tile. The tile no longer needs to stay in the panel.
-- The tile click is now only a fallback: used if the key does not stick after the write, or if the key does not exist on the device (single click, no retries).
-- Retries reduced to 3 attempts.
-- The module description now shows the method in use (`settings key`, `tile fallback` or `not found`) instead of the tile check.
-
-### Notes
-- The key is only written while a charger is connected and the battery is above 20%.
-- It is not written if the key is missing, to avoid creating unknown settings.
-- Confirmed on the author's device that writing the key flips the Bypass charging toggle. Current drop while charging should be verified with the Action button.
-
-## [0.2.0] - 2026-10-18 (experimental)
-
-### Added
-- Reads the real bypass state from `settings get system bypass_charge_state` (1 = on, 0 = off).
-- Skips the click when bypass is already on, so the toggle can no longer switch it off by mistake.
-- Retries up to 5 times, 3 seconds apart, until the state reads 1. This replaces the blind delay and should fix needing to plug in twice after a reboot.
-- Action button now shows the real bypass state and the charge limit (`bypass_charge_value`).
-
-### Changed
-- Shorter initial delay (2 s, or 6 s for the first plug-in after boot) because retries now cover the case where ColorOS is not ready yet.
-- If the state key is missing (other devices), the module falls back to a single click without retrying.
-- The 20% battery check and the unplug debounce are unchanged.
-
-### Known issues
-- The tile class name is hardcoded and may change with ColorOS updates.
-- The bypass tile must stay in the Quick Settings panel for the click to work.
-- The `bypass_charge_state` key is confirmed only on the author's device.
-- Unplugging and replugging within 2 seconds does not trigger a click.
-
-## [0.1.0] - 2026-10-18 (experimental)
-
-### Added
-- Turns on bypass charging by clicking ColorOS's bypass quick-settings tile when a charger is plugged in and the battery is above 20%.
-- Event-driven: waits on `battery_status` events from logcat, so there is no polling and no log files.
-- Also triggers when the phone is already charging at boot.
-- Longer delay for the first plug-in after boot, so ColorOS is ready.
-- Debounce for brief `plugged=0` flickers: only a confirmed unplug re-arms the trigger (checked with `dumpsys battery`).
-- Action button: charger type, battery level, temperature, voltage, current samples, tile check and an estimated bypass state.
-- Module description shows whether the tile was found at boot.
-
-### Known issues
-- The tile class name is hardcoded and may change with ColorOS updates.
-- Bypass detection in the Action button is an estimate (average battery current under 200 mA).
-- The click is a toggle: if bypass is already on, it will turn it off.
-- Unplugging and replugging within 2 seconds does not trigger a click.
-- Only tested on the author's device.
+## [0.1.0] - 2026-10-18
+- First version: turns on bypass charging when you plug in above 20% battery.
