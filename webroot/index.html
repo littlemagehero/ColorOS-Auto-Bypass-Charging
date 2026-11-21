@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Auto Bypass Charging</title>
+<link rel="stylesheet" href="https://mui.kernelsu.org/internal/colors.css">
+<style>
+/* Standard Material-style look. Uses the manager's dynamic colors when available, with fallbacks. */
+:root{color-scheme:light dark;--bg:var(--surface,#f4f7f6);--card:var(--surfaceContainer,#fff);--text:var(--onSurface,#171d1b);--muted:var(--onSurfaceVariant,#6f7976);--accent:var(--primary,#006b5e);--on-accent:var(--onPrimary,#fff);--soft:var(--primaryContainer,#cde8e1);--line:var(--outlineVariant,#c4cdca)}
+@media(prefers-color-scheme:dark){:root{--bg:var(--surface,#0f1513);--card:var(--surfaceContainer,#1b2120);--text:var(--onSurface,#dee4e1);--muted:var(--onSurfaceVariant,#bec9c5);--accent:var(--primary,#53dbc9);--on-accent:var(--onPrimary,#003730);--soft:var(--primaryContainer,#005047);--line:var(--outlineVariant,#3f4946)}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}[hidden]{display:none!important}
+body{margin:0 auto;padding:12px 16px 32px;max-width:600px;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;position:relative;padding:12px 4px 16px}
+h1{font-size:24px;font-weight:500;margin:0}
+.card{background:var(--card);border-radius:20px;padding:16px;margin-bottom:12px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.title{font-weight:500}.muted{color:var(--muted);font-size:13px}.value{font-size:20px;font-weight:500}
+button{border:0;border-radius:20px;padding:10px 20px;background:var(--accent);color:var(--on-accent);font:inherit;font-weight:500}
+button.tonal{background:var(--soft);color:var(--text)}button:disabled{opacity:.4}
+.icon-btn{width:44px;height:44px;padding:0;border-radius:50%;background:var(--soft);color:var(--text);font-size:20px}
+.switch{appearance:none;-webkit-appearance:none;width:52px;height:32px;margin:0;flex:none;border-radius:16px;border:2px solid var(--muted);background:transparent;position:relative;transition:background .2s}
+.switch::after{content:"";position:absolute;top:6px;left:6px;width:16px;height:16px;border-radius:50%;background:var(--muted);transition:left .2s,width .2s,height .2s,top .2s,background .2s}
+.switch:checked{background:var(--accent);border-color:var(--accent)}
+.switch:checked::after{top:2px;left:22px;width:24px;height:24px;background:var(--on-accent)}.switch:disabled{opacity:.4}
+input[type=range]{width:100%;margin:14px 0 4px;accent-color:var(--accent)}
+input[type=number]{width:110px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--text);font:inherit}
+input[type=checkbox]:not(.switch){width:22px;height:22px;accent-color:var(--accent)}
+#menu{position:absolute;right:0;top:100%;background:var(--card);border-radius:16px;box-shadow:0 4px 20px #0004;padding:8px 16px;z-index:2;min-width:230px}
+#menu .row{padding:10px 0}
+dialog{background:var(--card);color:var(--text);border:0;border-radius:24px;padding:20px;max-width:90vw}
+dialog::backdrop{background:#0006}li{margin:6px 0}ul{padding-left:18px}
+svg{width:100%;height:60px;margin-top:8px}polyline{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round}
+</style></head><body>
+<header><h1>Auto Bypass Charging</h1><button class="icon-btn" id="menuButton" aria-label="Menu">☰</button>
+ <div id="menu" hidden>
+  <label class="row"><span>Advanced options</span><input type="checkbox" class="switch" id="advancedSwitch"></label>
+  <div class="row"><button class="tonal" id="termsLink">Terms of use</button></div>
+ </div></header>
+
+<section class="card"><div class="grid">
+ <div><div class="muted">Battery</div><div class="value" id="battery">–</div></div>
+ <div><div class="muted">Charger</div><div class="value" id="charger">–</div></div>
+ <div><div class="muted">Bypass</div><div class="value" id="bypassState">–</div></div>
+ <div><div class="muted">Temp / Voltage</div><div class="value" id="tempVolt">–</div></div></div>
+ <div class="muted" id="notice"></div></section>
+
+<section class="card row"><div><div class="title">Bypass charging</div><div class="muted">Needs a wired charger</div></div>
+ <input type="checkbox" class="switch" id="bypassSwitch"></section>
+
+<section class="card"><div class="row"><div class="title">Threshold</div><b id="thresholdValue">–</b></div>
+ <div id="sliderBox"><input type="range" id="thresholdSlider" min="20" max="80" step="20" value="80">
+  <div class="row muted"><span>20%</span><span>40%</span><span>60%</span><span>80%</span></div></div>
+ <div id="customBox" class="row" hidden>
+  <input type="number" id="customInput" min="1" max="100" placeholder="1–100"><button id="customApply">Apply</button></div></section>
+
+<section class="card"><div class="row"><div><div class="title">Live battery current</div>
+ <div class="muted">Off by default. Reads every 5 s, only while this page is open.</div></div>
+ <input type="checkbox" class="switch" id="liveSwitch"></div>
+ <div id="liveBox" hidden><div class="value" id="liveValue">–</div>
+ <svg viewBox="0 0 200 60" preserveAspectRatio="none"><polyline id="liveLine" points=""/></svg></div></section>
+
+<dialog id="dialog"><b>Advanced options: terms of use</b>
+<ul>
+<li>Advanced options let you set values outside what ColorOS offers.</li>
+<li>This module is provided “as is”, without warranty of any kind.</li>
+<li>The author is not liable for any damage to your device, battery, data or warranty, including crashes, bootloops, overheating, battery wear or swelling, and data loss.</li>
+<li>Values outside the normal 20–80% range may cause unexpected behavior, forced restarts or charging problems.</li>
+<li>Rooting and modifying your system can void your warranty. You are solely responsible for what you change.</li>
+<li>This project is not affiliated with OnePlus, Oppo or ColorOS.</li>
+<li>To undo: turn Advanced options off.</li></ul>
+<label class="row" id="acceptRow"><span>I understand and accept these terms</span><input type="checkbox" id="acceptBox"></label>
+<div class="row" style="margin-top:14px"><button class="tonal" id="dialogCancel">Close</button><button id="dialogConfirm" disabled>Confirm</button></div></dialog>
+
+<script>
+// ---- Constants -------------------------------------------------------------
+const CONFIG_FILE = '/data/adb/coloros_autobypass.conf';
+const BATTERY_DIR = '/sys/class/power_supply/battery';
+const LIVE_INTERVAL_MS = 5000;
+const MAX_LIVE_POINTS = 40;
+const SLIDER_STOPS = {min: 20, max: 80, step: 20};
+
+// ---- State and element lookup ---------------------------------------------
+let device = {};          // last status read from the phone
+let livePoints = [];      // recent current readings (mA)
+let liveTimer = 0;
+const ui = Object.fromEntries([...document.querySelectorAll('[id]')].map((e) => [e.id, e]));
+
+// ---- Running commands as root (KernelSU / WebUI X) -------------------------
+function runRootCommand(command) {
+  return new Promise((resolve) => {
+    if (typeof ksu === 'undefined') return resolve('');
+    const callbackName = 'cb' + Date.now() + Math.random().toString(36).slice(2);
+    window[callbackName] = (errno, stdout) => { delete window[callbackName]; resolve(stdout || ''); };
+    ksu.exec(command, '{}', callbackName);
+  });
+}
+
+// Shell snippet that sets KEY=value in the config file (key and value are validated first)
+function configWriteCommand(key, value) {
+  return `touch ${CONFIG_FILE};grep -q '^${key}=' ${CONFIG_FILE}&&sed -i 's/^${key}=.*/${key}=${value}/' ${CONFIG_FILE}||echo '${key}=${value}'>>${CONFIG_FILE};`;
+}
+
+const toInteger = (text, min, max) => {
+  const n = Number(text);
+  return Number.isInteger(n) && n >= min && n <= max ? n : null;
+};
+const nearestSliderStop = (percent) =>
+  Math.min(SLIDER_STOPS.max, Math.max(SLIDER_STOPS.min, Math.round(percent / SLIDER_STOPS.step) * SLIDER_STOPS.step));
+
+// ---- Reading and showing the status ---------------------------------------
+async function loadDeviceStatus() {
+  const output = await runRootCommand(
+    `for f in capacity temp voltage_now;do echo "$f=$(cat ${BATTERY_DIR}/$f 2>/dev/null)";done;` +
+    `echo "bypass=$(settings get system bypass_charge_state)";echo "threshold=$(settings get system bypass_charge_value)";` +
+    `echo "wired=$(dumpsys battery|grep -cE '(AC|USB) powered: true')";` +
+    `echo "advanced=$(sed -n 's/^ADVANCED=//p' ${CONFIG_FILE} 2>/dev/null|head -n1)"`);
+  if (!output) { ui.notice.textContent = 'Open this page from KernelSU or WebUI X'; return; }
+  device = Object.fromEntries(output.split('\n').filter((l) => l.includes('=')).map((l) => {
+    const i = l.indexOf('='); return [l.slice(0, i), l.slice(i + 1).trim()];
+  }));
+  renderDashboard();
+}
+
+function renderDashboard() {
+  const wired = Number(device.wired) > 0;
+  const bypassOn = device.bypass === '1';
+  const advanced = device.advanced === '1';
+  const threshold = parseInt(device.threshold) || 0;
+
+  ui.battery.textContent = (device.capacity || '–') + '%';
+  ui.charger.textContent = wired ? 'Wired' : 'None';
+  ui.bypassState.textContent = bypassOn ? 'On' : device.bypass === '0' ? 'Off' : 'Unknown';
+  ui.tempVolt.textContent = (device.temp ? (device.temp / 10).toFixed(1) + '°C' : '–') + ' / ' +
+                            (device.voltage_now ? Math.round(device.voltage_now / 1000) + ' mV' : '–');
+  ui.notice.textContent = wired ? '' : 'No wired charger: bypass can’t be switched';
+
+  ui.bypassSwitch.checked = bypassOn;
+  ui.bypassSwitch.disabled = !wired || !/^[01]$/.test(device.bypass);
+
+  // Advanced options replace the slider with a custom value field
+  ui.thresholdValue.textContent = threshold ? threshold + '%' : '–';
+  ui.sliderBox.hidden = advanced;
+  ui.customBox.hidden = !advanced;
+  ui.thresholdSlider.value = threshold ? nearestSliderStop(threshold) : SLIDER_STOPS.max;
+  if (advanced) ui.customInput.value = threshold || '';
+  ui.advancedSwitch.checked = advanced;
+}
+
+// ---- Actions ---------------------------------------------------------------
+async function setBypass(enabled) {
+  await runRootCommand(`settings put system bypass_charge_state ${enabled ? 1 : 0}`);
+  setTimeout(loadDeviceStatus, 1200);          // give ColorOS a moment to react
+}
+
+async function saveThreshold(percent) {
+  await runRootCommand(`${configWriteCommand('THRESHOLD', percent)}settings put system bypass_charge_value ${percent}`);
+  loadDeviceStatus();
+}
+
+async function setAdvancedMode(enabled) {
+  let command = configWriteCommand('ADVANCED', enabled ? 1 : 0);
+  const threshold = parseInt(device.threshold) || SLIDER_STOPS.max;
+  if (!enabled && threshold !== nearestSliderStop(threshold)) {   // back to a normal slider value
+    const stop = nearestSliderStop(threshold);
+    command += `${configWriteCommand('THRESHOLD', stop)}settings put system bypass_charge_value ${stop}`;
+  }
+  await runRootCommand(command);
+  loadDeviceStatus();
+}
+
+// ---- Live battery current (off by default, only while the page is visible) --
+function readLiveCurrent() {
+  clearTimeout(liveTimer);
+  if (!ui.liveSwitch.checked || document.hidden) return;
+  runRootCommand(`cat ${BATTERY_DIR}/current_now ${BATTERY_DIR}/status`).then((output) => {
+    const [rawCurrent, status] = output.trim().split('\n');
+    let milliamps = Math.abs(parseInt(rawCurrent) || 0);
+    if (milliamps > 20000) milliamps = Math.round(milliamps / 1000);   // some phones report µA
+    livePoints = [...livePoints, milliamps].slice(-MAX_LIVE_POINTS);
+    ui.liveValue.textContent = `${milliamps} mA · ${status || '?'}`;
+    const peak = Math.max(...livePoints, 1);
+    ui.liveLine.setAttribute('points', livePoints.map((p, i) =>
+      `${(i * 200 / (MAX_LIVE_POINTS - 1)).toFixed(1)},${(58 - p / peak * 54).toFixed(1)}`).join(' '));
+    liveTimer = setTimeout(readLiveCurrent, LIVE_INTERVAL_MS);
+  });
+}
+
+// ---- Terms dialog ------------------------------------------------------------
+function showTerms(needsConfirmation) {
+  ui.acceptBox.checked = false;
+  ui.dialogConfirm.disabled = true;
+  ui.acceptRow.hidden = ui.dialogConfirm.hidden = !needsConfirmation;
+  ui.dialog.showModal();
+}
+
+// ---- Wiring up the controls -------------------------------------------------
+ui.menuButton.onclick = (e) => { e.stopPropagation(); ui.menu.hidden = !ui.menu.hidden; };
+document.addEventListener('click', (e) => { if (!ui.menu.contains(e.target)) ui.menu.hidden = true; });
+ui.termsLink.onclick = () => { ui.menu.hidden = true; showTerms(false); };
+
+ui.bypassSwitch.onchange = (e) => setBypass(e.target.checked);
+ui.thresholdSlider.onchange = (e) => saveThreshold(toInteger(e.target.value, SLIDER_STOPS.min, SLIDER_STOPS.max));
+ui.customApply.onclick = () => {
+  const percent = toInteger(ui.customInput.value, 1, 100);
+  if (percent) saveThreshold(percent); else ui.notice.textContent = 'Enter a whole number from 1 to 100';
+};
+
+ui.advancedSwitch.onchange = (e) => e.target.checked ? showTerms(true) : setAdvancedMode(false);
+ui.acceptBox.onchange = (e) => { ui.dialogConfirm.disabled = !e.target.checked; };
+ui.dialog.onclose = () => { ui.advancedSwitch.checked = device.advanced === '1'; };
+ui.dialogCancel.onclick = () => ui.dialog.close();
+ui.dialogConfirm.onclick = () => { ui.dialog.close(); setAdvancedMode(true); };
+
+ui.liveSwitch.onchange = (e) => {
+  try { localStorage.setItem('liveCurrent', e.target.checked ? 1 : 0); } catch (err) {}
+  ui.liveBox.hidden = !e.target.checked; livePoints = []; readLiveCurrent();
+};
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { loadDeviceStatus(); readLiveCurrent(); } });
+
+try { ui.liveSwitch.checked = localStorage.getItem('liveCurrent') === '1'; } catch (err) {}
+ui.liveBox.hidden = !ui.liveSwitch.checked;
+loadDeviceStatus();      // show everything the moment the page opens
+readLiveCurrent();
+</script></body></html>

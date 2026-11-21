@@ -10,7 +10,13 @@ This module is created because ColorOS only supports auto bypass charging when p
 - On plug-in, reads `settings get system bypass_charge_state`. If bypass is already on it does nothing; if it is 0 it writes 1.
 - If the write does not stick, or the key does not exist, it falls back to clicking the bypass tile:
   `cmd statusbar click-tile com.oplus.battery/com.oplus.powermanager.fuelgaue.bypasscharge.BypassChargeTile`
+- It retries a few times if ColorOS is not ready yet.
 - ColorOS turns bypass off again by itself on unplug or when it reaches your charge limit.
+
+## WebUI
+Open the module's WebUI from KernelSU (or WebUI X on Magisk). It shows the battery and bypass state as soon as it opens, lets you switch bypass, and sets the threshold with a slider (20, 40, 60 or 80). Live battery current is off by default, reads every 5 seconds, and only runs while the page is open.
+
+The menu (top right) has **Advanced options**. Turning it on, after accepting the terms, replaces the slider with a field where you can type any threshold from 1 to 100. More advanced options will be added there. The WebUI is only static files, so it uses nothing when it is not open.
 
 ## Action button
 - **Charging, bypass on:** shows the status (battery, charger, limit, temperature, voltage and three current samples with their average). Changes nothing.
@@ -20,11 +26,7 @@ This module is created because ColorOS only supports auto bypass charging when p
 It only runs when you press Action, so there is no background overhead.
 
 ## Optional: set the threshold
-ColorOS lets you pick the bypass threshold in Settings. To have the module apply it instead, create `/data/adb/coloros_autobypass.conf` containing:
-```
-THRESHOLD=80
-```
-Use 20, 40, 60 or 80. The value is applied each time you plug in. Without the file, the module never touches your threshold. The file is kept when you update the module; delete it by hand if you remove the module.
+ColorOS lets you pick the bypass threshold in Settings. To have the module apply it instead, create `/data/adb/coloros_autobypass.conf` containing `THRESHOLD=80` (20, 40, 60 or 80). The value is applied each time you plug in. Without the file, the module never touches your threshold. The WebUI writes this file for you.
 
 ## Requirements
 - ColorOS with the `bypass_charge_state` system setting (the Quick Settings tile is only a fallback)

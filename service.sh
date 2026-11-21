@@ -1,11 +1,17 @@
 #!/system/bin/sh
-PROP=/data/adb/modules/coloros_autobypass/module.prop
+LIVE=/data/adb/modules/coloros_autobypass
+PROP=$LIVE/module.prop
 CONF=/data/adb/coloros_autobypass.conf
 TILE="com.oplus.battery/com.oplus.powermanager.fuelgaue.bypasscharge.BypassChargeTile"
 PLUGGED="(AC|USB) powered: true"   # wired only: ColorOS bypass needs a wired charger
 
 until [ "$(getprop sys.boot_completed)" = "1" ]; do sleep 3; done
-[ "$1" = "now" ] || sleep 20   # "now" = hot install, skip the boot wait
+if [ "$1" = "now" ]; then
+  # Hot install: once the installer is done, clear its "pending update" flag so the manager's switch works
+  ( sleep 10; rm -f "$LIVE/update" ) &
+else
+  sleep 20
+fi
 
 st=$(settings get system bypass_charge_state 2>/dev/null)
 if [ "$st" = "0" ] || [ "$st" = "1" ]; then
@@ -17,10 +23,18 @@ else
 fi
 sed -i "s#^description=.*#description=status: active ✅ | method: $M#" "$PROP" 2>/dev/null
 
-# Optional: apply THRESHOLD=20|40|60|80 from the config file, if it exists
+# Config file values (digits only)
+conf() { sed -n "s/^$1=\([0-9]*\).*/\1/p" "$CONF" 2>/dev/null | head -n 1; }
+
+# Optional: apply THRESHOLD from the config file (20/40/60/80, or 1-100 when ADVANCED=1)
 set_threshold() {
-  t=$(sed -n 's/^THRESHOLD=\([0-9]*\).*/\1/p' "$CONF" 2>/dev/null | head -n 1)
-  case "$t" in 20|40|60|80) ;; *) return ;; esac
+  t=$(conf THRESHOLD)
+  case "$t" in ''|*[!0-9]*) return ;; esac
+  if [ "$(conf ADVANCED)" = "1" ]; then
+    [ "$t" -ge 1 ] && [ "$t" -le 100 ] || return
+  else
+    case "$t" in 20|40|60|80) ;; *) return ;; esac
+  fi
   [ "$(settings get system bypass_charge_value 2>/dev/null)" = "$t" ] ||
     settings put system bypass_charge_value "$t" 2>/dev/null
 }
@@ -28,6 +42,7 @@ set_threshold() {
 # Turn bypass on: write the settings key; fall back to the tile if it does not stick
 fire() {
   sleep "$1"
+  [ -e "$LIVE/disable" ] && return   # module switched off in the manager
   set_threshold
   i=0
   while [ "$i" -lt 3 ]; do

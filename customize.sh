@@ -2,11 +2,12 @@
 MODID=coloros_autobypass
 LIVE=/data/adb/modules/$MODID
 
-# Refresh the live copies so the Action button uses the new scripts right away
+# Refresh the live copies so the Action button and WebUI use the new files right away
 if [ -d "$LIVE" ]; then
   for f in service.sh action.sh; do
     cp -f "$MODPATH/$f" "$LIVE/$f" 2>/dev/null && chmod 755 "$LIVE/$f"
   done
+  cp -rf "$MODPATH/webroot" "$LIVE/" 2>/dev/null
 fi
 chmod 755 "$MODPATH/service.sh" "$MODPATH/action.sh"
 

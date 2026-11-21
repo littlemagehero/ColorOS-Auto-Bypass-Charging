@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.4.0] - 2026-10-18
+- WebUI: see status right away, switch bypass, set the threshold with a slider, and watch live battery current (off by default).
+- Advanced options in the menu (behind a terms pop-up) replace the slider with a custom threshold field.
+- The module switch in the manager works after a hot install, and switching the module off stops bypass from being turned on.
+
 ## [0.3.4] - 2026-10-18
 - README explains why the module exists. Simpler changelog.
 - Small code cleanup.
